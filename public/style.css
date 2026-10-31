@@ -1,0 +1,587 @@
+/* 深色玻璃质感。手机优先，桌面只是把内容加宽。 */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #0e1014;
+  --bg-elevated: rgba(28, 32, 40, 0.72);
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #e8eaed;
+  --text-dim: #9aa2ae;
+  --accent: #4b8bf5;
+
+  --radius: 14px;
+  --radius-sm: 10px;
+  --blur: 20px;
+
+  --player-height: 128px;
+}
+
+* { box-sizing: border-box; }
+
+/* ---------- 图标 ---------- */
+
+.icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  /* 顶部一抹极淡的辉光，避免纯黑死板 */
+  background-image: radial-gradient(120% 60% at 50% -10%, rgba(75, 139, 245, 0.10), transparent 70%);
+  background-attachment: fixed;
+  color: var(--text);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  /* --player-height 由 JS 实测写入，已经包含安全区，这里不要再加一次 */
+  padding: 0 16px calc(var(--player-height) + 24px);
+}
+
+/* ---------- 顶部 BV 输入 ---------- */
+
+/* 背景要铺满整屏：只在 720px 内容宽度内铺的话，两侧的辉光会被挡住，
+   顶部会显出一块和页面其余部分颜色不同的矩形。 */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 16px 0 12px;
+  background: linear-gradient(var(--bg) 70%, transparent);
+}
+
+.topbar-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.search {
+  display: flex;
+  gap: 8px;
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  backdrop-filter: blur(var(--blur));
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.search input::placeholder { color: var(--text-dim); }
+
+.search input:focus {
+  border-color: var(--accent);
+  background: rgba(28, 32, 40, 0.9);
+}
+
+.search button {
+  padding: 12px 20px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.18s ease;
+}
+
+.search button:hover { filter: brightness(1.1); }
+.search button:disabled { opacity: 0.5; cursor: default; filter: none; }
+
+.status {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.status.is-error {
+  border-color: rgba(220, 90, 90, 0.4);
+  color: #f0a0a0;
+}
+
+.retry {
+  margin-left: 10px;
+  padding: 3px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* ---------- 收藏夹 ---------- */
+
+.favorites {
+  margin-top: 4px;
+}
+
+.favorites-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.favorites-empty {
+  margin: 0;
+  padding: 28px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.favorites-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fav-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  overflow: hidden;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.fav-item.is-active {
+  border-color: var(--accent);
+  background: rgba(75, 139, 245, 0.1);
+}
+
+.fav-row {
+  display: flex;
+  align-items: center;
+}
+
+.fav-play {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fav-cover {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+}
+
+.fav-meta { min-width: 0; }
+
+.fav-toggle,
+.fav-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.fav-toggle:hover,
+.fav-remove:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.fav-toggle .icon,
+.fav-remove .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.fav-toggle .icon { transition: transform 0.18s ease; }
+.fav-toggle.is-open .icon { transform: rotate(180deg); }
+
+/* 限高 + 内部滚动：200 P 也不会把页面撑开 */
+.fav-parts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 4px;
+  max-height: min(40vh, 300px);
+  margin: 0;
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--border);
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.fav-parts::-webkit-scrollbar {
+  width: 6px;
+}
+
+.fav-parts::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.fav-parts::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.fav-parts::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.fav-part {
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.fav-part:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.fav-part.is-current {
+  color: var(--accent);
+  background: rgba(75, 139, 245, 0.12);
+}
+
+/* ---------- 底部播放条 ---------- */
+
+.player {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: grid;
+  gap: 10px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: rgba(14, 16, 20, 0.86);
+  backdrop-filter: blur(24px);
+}
+
+/* 必须显式写这一条。上面的 display: grid 是作者样式，
+   而 [hidden] { display: none } 来自浏览器默认样式表 —— 作者样式优先级更高，
+   所以不加这条的话 hidden 属性完全失效，空播放条会一直盖在页面内容上。 */
+.player[hidden] { display: none; }
+
+.player-track {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.player-cover,
+.fav-cover {
+  border-radius: 8px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.player-cover {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+}
+
+.player-meta { flex: 1; min-width: 0; }
+
+/* 播放条与收藏列表共用的单行文本样式 */
+.player-title,
+.player-author,
+.fav-title,
+.fav-author {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-title,
+.fav-title { font-size: 14px; }
+
+.player-author,
+.fav-author { font-size: 12px; color: var(--text-dim); }
+
+.player-controls {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctl {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease;
+}
+
+.ctl:hover { color: var(--text); background: rgba(255, 255, 255, 0.06); }
+
+.ctl.is-on { color: var(--accent); }
+
+/* 播放条上的收藏星标 */
+.fav.is-on { color: #f5c451; }
+.fav.is-on .icon { fill: currentColor; }
+.fav:disabled { opacity: 0.35; cursor: default; }
+
+.ctl:focus-visible,
+.fav-play:focus-visible,
+.fav-toggle:focus-visible,
+.fav-part:focus-visible,
+.fav-remove:focus-visible,
+.retry:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ctl-main {
+  width: 46px;
+  height: 46px;
+  background: var(--accent);
+  color: #fff;
+}
+
+/* 主按钮用实心图标，和描边控件区分开 */
+.ctl-main .icon {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+  stroke: none;
+}
+
+.ctl-main:hover { background: var(--accent); filter: brightness(1.1); }
+
+.player-progress {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.time {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.seek {
+  flex: 1;
+  min-width: 0;
+  height: 18px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.seek::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.seek::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.seek::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+  margin-top: -4.5px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.seek::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* ---------- 撤销提示 ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--player-height) + 16px);
+  z-index: 40;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  max-width: calc(100vw - 32px);
+  padding: 9px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(28, 32, 40, 0.94);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  animation: toast-in 0.18s ease-out;
+}
+
+.toast[hidden] { display: none; }
+
+.toast button {
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toast button:hover { filter: brightness(1.15); }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 6px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ---------- 桌面微调 ---------- */
+
+@media (min-width: 760px) {
+  :root { --player-height: 108px; }
+
+  .player {
+    /* 桌面上把播放条收成居中的悬浮卡片 */
+    left: 50%;
+    right: auto;
+    bottom: 16px;
+    width: min(720px, calc(100% - 32px));
+    transform: translateX(-50%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "track controls"
+      "progress progress";
+    align-items: center;
+  }
+
+  .player-track { grid-area: track; margin: 0; }
+  .player-controls { grid-area: controls; }
+  .player-progress { grid-area: progress; margin: 0; }
+
+  .app { padding-bottom: calc(var(--player-height) + 48px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------- 移动端细节 ---------- */
+
+@media (max-width: 759px) {
+  /* 首屏兜底值；播放后由 JS 按实际高度覆盖 */
+  :root { --player-height: 176px; }
+
+  .app { padding-left: 12px; padding-right: 12px; }
+  .topbar-inner { padding-left: 12px; padding-right: 12px; }
+
+  /* 触摸目标不小于 44px */
+  .ctl { width: 44px; height: 44px; }
+  .ctl-main { width: 52px; height: 52px; }
+
+  .seek { height: 28px; }
+  .seek::-webkit-slider-thumb { width: 14px; height: 14px; margin-top: -5.5px; }
+}
+
+/* 防止 iOS 上双击缩放带来的延迟 */
+button, input { touch-action: manipulation; }
+
+/* 输入框在 iOS 上字号小于 16px 会触发自动放大 */
+@media (max-width: 759px) {
+  .search input { font-size: 16px; }
+}

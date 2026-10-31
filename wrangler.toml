@@ -1,0 +1,7 @@
+name = "bili"
+main = "worker/index.js"
+compatibility_date = "2026-05-03"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
